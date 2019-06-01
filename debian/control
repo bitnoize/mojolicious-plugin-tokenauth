@@ -1,0 +1,16 @@
+Source: libmojolicious-plugin-tokenauth-perl
+Section: perl
+Priority: optional
+Maintainer: Dmitry Krutikov <mitya@whteam.net>
+Build-Depends: debhelper (>= 10), perl (>= 5.24),
+  libmojolicious-perl (>= 8.12),
+  libmojo-jwt-perl (>= 0.08)
+Standards-Version: 4.3.0
+Homepage: https://bitbucket.org/whoerdev/mojolicious-plugin-tokenauth
+
+Package: libmojolicious-plugin-tokenauth-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends},
+  libmojolicious-perl (>= 8.12),
+  libmojo-jwt-perl (>= 0.08)
+Description: JWT authentication for your Mojolicious app
