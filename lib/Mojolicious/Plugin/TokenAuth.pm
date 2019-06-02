@@ -1,7 +1,7 @@
 package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
-our $VERSION = "1.01_001";
+our $VERSION = "1.02_001";
 $VERSION = eval $VERSION;
 
 use Scalar::Util qw/looks_like_number/;
@@ -9,16 +9,16 @@ use Mojo::JWT;
 
 use constant {
   VALIDATE_REGEX  => qr/^[a-zA-Z0-9\-_.]{16,1024}$/,
-  DEFAULT_EXPIRE  => 900
+  DEFAULT_EXPIRES => 900
 };
 
 
 sub register {
   my ($self, $app, $conf) = @_;
 
-  my $encode = $conf->{encode} ||= sub { {} };
-  my $decode = $conf->{decode} ||= sub { {} };
-  my $expire = $conf->{expire} ||= DEFAULT_EXPIRE;
+  my $encode  = $conf->{encode}   ||= sub { {} };
+  my $decode  = $conf->{decode}   ||= sub { {} };
+  my $expires = $conf->{expires}  ||= DEFAULT_EXPIRES;
 
   #
   # Helpers
@@ -65,8 +65,6 @@ sub register {
       %$custom
     });
 
-    warn "Token verify:", $app->dumper($c->stash('token'));
-
     return 1;
   });
 
@@ -83,7 +81,7 @@ sub register {
       %$custom
     });
 
-    $jwt->expires($jwt->now + $expire);
+    $jwt->expires($jwt->now + $expires);
 
     ($jwt->encode, $jwt->expires);
   });
