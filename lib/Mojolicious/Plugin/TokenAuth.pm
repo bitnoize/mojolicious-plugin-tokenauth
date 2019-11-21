@@ -1,15 +1,16 @@
 package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
-our $VERSION = "1.02_002";
+## no critic
+our $VERSION = "1.03_001";
 $VERSION = eval $VERSION;
+## use critic
 
 use Scalar::Util qw/looks_like_number/;
 use Mojo::JWT;
 
 sub VALIDATE_REGEX { qr/^[a-zA-Z0-9\-_.]{16,1024}$/ }
 sub DEFAULT_EXPIRE { 900 }
-
 
 sub register {
   my ($self, $app, $conf) = @_;
@@ -30,15 +31,15 @@ sub register {
   });
 
   $app->helper(token_verify => sub {
-    my ($c, $token_type, $access_token) = @_;
+    my ($c, $type, $token) = @_;
 
     $c->render(status => 401) and return 0
-      unless $token_type and lc $token_type eq 'bearer';
+      unless $type and lc $type eq 'bearer';
 
     $c->render(status => 401) and return 0
-      unless $access_token and $access_token =~ VALIDATE_REGEX;
+      unless $token and $token =~ VALIDATE_REGEX;
 
-    my $claims = eval { $c->jwt->decode($access_token) };
+    my $claims = eval { $c->jwt->decode($token) };
 
     $c->render(status => 401) and return 0
       unless $claims and ref $claims eq 'HASH';
