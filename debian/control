@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 10), perl (>= 5.24),
   libmojolicious-perl (>= 8.12),
   libmojo-jwt-perl (>= 0.08)
 Standards-Version: 4.3.0
-Homepage: https://bitbucket.org/whoerdev/mojolicious-plugin-tokenauth
+Homepage: https://github.com/bitnoize/mojolicious-plugin-tokenauth
 
 Package: libmojolicious-plugin-tokenauth-perl
 Architecture: all
