@@ -2,7 +2,7 @@ package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
 ## no critic
-our $VERSION = '1.05_001';
+our $VERSION = '1.05_002';
 $VERSION = eval $VERSION;
 ## use critic
 
@@ -36,7 +36,7 @@ sub register {
 
     $app->log->warn("Token verify decode error: $@") and return if $@;
 
-    $app->log->warn("Token verify broken decode") and return
+    $app->log->debug("Token verify broken decode") and return
       unless $claims and ref $claims eq 'HASH';
 
     $app->log->error("Token verify wrong service") and return
@@ -52,7 +52,7 @@ sub register {
 
     $app->log->warn("Token verify custom error: $@") and return if $@;
 
-    $app->log->warn("Token verify broken custom") and return
+    $app->log->debug("Token verify broken custom") and return
       unless $custom and ref $custom eq 'HASH';
 
     my $token = {
@@ -71,7 +71,7 @@ sub register {
 
     $app->log->warn("Token issue custom error: $@") and return if $@;
 
-    $app->log->warn("Token issue broken custom") and return
+    $app->log->debug("Token issue broken custom") and return
       unless $custom and ref $custom eq 'HASH';
 
     my $jwt = Mojo::JWT->new(
