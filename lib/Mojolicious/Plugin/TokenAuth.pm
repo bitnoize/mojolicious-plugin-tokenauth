@@ -2,39 +2,40 @@ package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
 ## no critic
-our $VERSION = '1.05_002';
+our $VERSION = '1.05_006';
 $VERSION = eval $VERSION;
 ## use critic
 
 use Scalar::Util qw/looks_like_number/;
 use Mojo::JWT;
 
-sub VALIDATE_REGEX { qr/^[a-z0-9\-_.]{16,4096}$/i }
-sub DEFAULT_EXPIRE { 900 }
+sub VALIDATE_REGEX  { qr/^[a-z0-9\-_.]{16,4096}$/i }
+sub DEFAULT_EXPIRES { 900 }
 
 sub register {
   my ($self, $app, $conf) = @_;
 
-  $conf->{encode} //= sub { {} };
-  $conf->{decode} //= sub { {} };
-  $conf->{expire} //= DEFAULT_EXPIRE;
-  $conf->{secret} //= $app->secrets->[-1];
+  $conf->{encode}   //= sub { {} };
+  $conf->{decode}   //= sub { {} };
+  $conf->{expires}  //= DEFAULT_EXPIRES;
+  $conf->{secret}   //= $app->secrets->[-1];
 
-  $app->log->warn("JWT secret is not secure!")
+  $app->log->warn("JWT default secret is not secure!")
     if $conf->{secret} eq $app->moniker;
 
   $app->helper(token_verify => sub {
-    my ($c, $access) = @_;
+    my ($c, $credentials, %opts) = @_;
 
-    return unless $access and $access =~ VALIDATE_REGEX;
+    my $secret = $opts{secret} // $conf->{secret};
 
-    my $jwt = Mojo::JWT->new(
-      secret  => $conf->{secret}
-    );
+    $app->log->debug("Token verify malformed credentials") and return
+      unless $credentials and $credentials =~ VALIDATE_REGEX;
 
-    my $claims = eval { $c->jwt->decode($access) };
+    my $jwt = Mojo::JWT->new(secret => $secret);
 
-    $app->log->warn("Token verify decode error: $@") and return if $@;
+    my $claims = eval { $jwt->decode($credentials) };
+
+    $app->log->debug("Token verify decode error: $@") and return if $@;
 
     $app->log->debug("Token verify broken decode") and return
       unless $claims and ref $claims eq 'HASH';
@@ -48,45 +49,41 @@ sub register {
     $app->log->error("Token verify wrong expires") and return
       unless looks_like_number $claims->{exp};
 
-    my $custom = eval { $conf->{decode}->($claims) };
+    my $decode = eval { $conf->{decode}->($claims) };
 
-    $app->log->warn("Token verify custom error: $@") and return if $@;
+    $app->log->debug("Token verify decode error: $@") and return if $@;
 
-    $app->log->debug("Token verify broken custom") and return
-      unless $custom and ref $custom eq 'HASH';
+    $app->log->debug("Token verify broken decode") and return
+      unless $decode and ref $decode eq 'HASH';
 
     my $token = {
       expires => $claims->{exp},
       created => $claims->{iat},
-      %$custom
+      %$decode
     };
 
     return $token;
   });
 
   $app->helper(token_issue => sub {
-    my ($c, $token) = @_;
+    my ($c, $token, %opts) = @_;
 
-    my $custom = eval { $conf->{encode}->($token) };
+    my $secret  = $opts{secret}   // $conf->{secret};
+    my $expires = $opts{expires}  // $conf->{expires};
 
-    $app->log->warn("Token issue custom error: $@") and return if $@;
+    my $encode = eval { $conf->{encode}->($token) };
 
-    $app->log->debug("Token issue broken custom") and return
-      unless $custom and ref $custom eq 'HASH';
+    $app->log->debug("Token issue encode error: $@") and return if $@;
 
-    my $jwt = Mojo::JWT->new(
-      secret  => $conf->{secret},
-      set_iat => 1
-    );
+    $app->log->debug("Token issue broken encode") and return
+      unless $encode and ref $encode eq 'HASH';
 
-    $jwt->claims({
-      iss => $app->moniker,
-      %$custom
-    });
+    my $jwt = Mojo::JWT->new(secret => $secret, set_iat => 1);
 
-    $jwt->expires($jwt->now + $conf->{expire});
+    $jwt->claims({ iss => $app->moniker, %$encode });
+    $jwt->expires($jwt->now + $expires);
 
-    return ($jwt->encode, $jwt->expires);
+    return $jwt->encode, $jwt->expires;
   });
 }
 
