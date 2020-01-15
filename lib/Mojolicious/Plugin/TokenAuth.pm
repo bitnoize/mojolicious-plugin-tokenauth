@@ -2,7 +2,7 @@ package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
 ## no critic
-our $VERSION = '1.05_006';
+our $VERSION = '1.05_007';
 $VERSION = eval $VERSION;
 ## use critic
 
