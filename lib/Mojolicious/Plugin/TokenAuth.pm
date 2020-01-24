@@ -2,7 +2,7 @@ package Mojolicious::Plugin::TokenAuth;
 use Mojo::Base "Mojolicious::Plugin";
 
 ## no critic
-our $VERSION = '1.05_007';
+our $VERSION = '1.05_008';
 $VERSION = eval $VERSION;
 ## use critic
 
@@ -18,7 +18,7 @@ sub register {
   $conf->{encode}   //= sub { {} };
   $conf->{decode}   //= sub { {} };
   $conf->{expires}  //= DEFAULT_EXPIRES;
-  $conf->{secret}   //= $app->secrets->[-1];
+  $conf->{secret}   //= $app->secrets->[-1] // $app->moniker;
 
   $app->log->warn("JWT default secret is not secure!")
     if $conf->{secret} eq $app->moniker;
